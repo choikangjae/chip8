@@ -71,7 +71,7 @@ impl Processor {
         (self.ram[self.pc] as u16) << 8 | (self.ram[self.pc + 1] as u16)
     }
 
-    pub fn decode_opcode(&mut self, opcode: u16) {
+    pub fn execute_opcode(&mut self, opcode: u16) {
         let first = opcode >> 12;
         let vx = (opcode & 0x0F00) >> 8;
         let vy = (opcode & 0x00F0) >> 4;
@@ -165,17 +165,15 @@ impl Display {
 //delta somewhere
 
 fn main() {
-    //init
     let mut processor = Processor::new();
     let mut display = Display::new().expect("Display init failed");
 
     processor.load_binary();
 
-    //loop
     loop {
         let opcode = processor.fetch_opcode();
 
-        processor.decode_opcode(opcode);
+        processor.execute_opcode(opcode);
 
         display.render(&processor.vram);
     }
