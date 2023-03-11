@@ -1,15 +1,13 @@
-- Frame : 60FPS
-- OpPerSec : 500HZ
+- Frame : 60
+- Operation per second : 500 ~ 1000 Hz
 
-Instructions per second should be between 500 to 1000 to make it playable. It will translate to one operation takes about 16.67ms.
+Instructions per second should be around 500 to 1000 to make it playable. So one operation takes about 16.67ms.
 
-Chip8 is the interpreter actually but we are `emulating` old machines like [COSMAC VIP] which had 1MHz CPU(1802), so to speak. Simple and easy way to solve this, sleeping a thread is a good start. But sleeping in fixed time will cause problems. To deal with it, we calculate `delta time`. 
-
-Timer is not based on the seconds. It based on the tick.
+Timer is based on the tick, but seconds.
 
 ```
 let cur_time = get_system_time();
-let delta = cur_time - last_time; // last_time is stored somewhere on RAM. No rules here.
+let delta = cur_time - last_time; 
 *last_time = cur_time;
 
 accumulator += delta;
