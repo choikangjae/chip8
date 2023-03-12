@@ -16,7 +16,7 @@ struct Processor {
     pc: usize,
     sp: usize,
     stack: [u16; 16],
-    vram: [bool; 64 * 32],
+    vram: [bool; (WIDTH * HEIGHT) as usize],
     key: [u8; 16],
 }
 
@@ -73,8 +73,8 @@ impl Processor {
 
     pub fn execute_opcode(&mut self, opcode: u16) {
         let first = opcode >> 12;
-        let vx = (opcode & 0x0F00) >> 8;
-        let vy = (opcode & 0x00F0) >> 4;
+        let x = (opcode & 0x0F00) >> 8;
+        let y = (opcode & 0x00F0) >> 4;
 
         let n = opcode & 0x000F;
         let nn = opcode & 0x00FF;
@@ -89,11 +89,11 @@ impl Processor {
                 self.pc = nnn as usize;
             }
             0x6 => {
-                self.registers[vx as usize] = nn as u8;
+                self.registers[x as usize] = nn as u8;
                 self.pc += 2;
             }
             0x7 => {
-                self.registers[vx as usize] += nn as u8;
+                self.registers[x as usize] += nn as u8;
                 self.pc += 2;
             }
             0xA => {
@@ -103,17 +103,17 @@ impl Processor {
             //DXYN
             //It draws N pixels tall sprite from the memory location that the I index register is holding to the screen, at (vx, vy)
             0xD => {
-                let x = self.registers[vx as usize] as u16;
-                let y = self.registers[vy as usize] as u16;
+                let vx = self.registers[x as usize] as u16;
+                let vy = self.registers[y as usize] as u16;
                 self.registers[0xF] = 0;
                 for row in 0..n {
                     let row_data = self.ram[self.i + row as usize] as u16;
                     for pixel in 0..8 {
-                        if (row_data & (0x80 >> pixel)) != 0 {
-                            if self.vram[(x + pixel + (y + row) * 64) as usize] {
+                        if (row_data & (0b1000_0000 >> pixel)) != 0 {
+                            if self.vram[(vx + pixel + (vy + row) * WIDTH) as usize] {
                                 self.registers[0xF] = 1;
                             }
-                            self.vram[(x + pixel + (y + row) * 64) as usize] ^= true;
+                            self.vram[(vx + pixel + (vy + row) * WIDTH) as usize] ^= true;
                         }
                     }
                 }
@@ -149,12 +149,12 @@ impl Display {
 
         Ok(Display { canvas })
     }
-    pub fn render(&mut self, vram: &[bool; 64 * 32]) {
-        self.canvas.set_draw_color(Color::WHITE);
-        for row in 0..32 {
-            for col in 0..64 {
-                if vram[row * 64 + col] {
-                    self.canvas.draw_rect(Rect::new(col as i32 * MAGNITUDE as i32, row as i32 * MAGNITUDE as i32, MAGNITUDE.into(), MAGNITUDE.into())).expect("Drawing failed");
+    pub fn render(&mut self, vram: &[bool; (WIDTH * HEIGHT) as usize]) {
+        self.canvas.set_draw_color(Color::GREEN);
+        for row in 0..HEIGHT {
+            for col in 0..WIDTH {
+                if vram[(row * WIDTH + col) as usize] {
+                    self.canvas.fill_rect(Rect::new(col as i32 * MAGNITUDE as i32, row as i32 * MAGNITUDE as i32, MAGNITUDE.into(), MAGNITUDE.into())).expect("Drawing failed");
                 }
             }
         }
