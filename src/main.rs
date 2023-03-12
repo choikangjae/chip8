@@ -182,7 +182,7 @@ impl Processor {
                     }
                     0x6 => {
                         self.registers[0xF] = vx & 1;
-                        self.registers[x as usize] /= 2;
+                        self.registers[x as usize] >>= 1;
                     }
                     0x7 => {
                         let (val, flag) = self.registers[y as usize].overflowing_sub(self.registers[x as usize]);
@@ -193,12 +193,8 @@ impl Processor {
                         }
                     }
                     0xE => {
-                        if (vx >> 7) & 1 == 1 {
-                            self.registers[0xF] = 1;
-                        } else {
-                            self.registers[0xF] = 0;
-                        }
-                        self.registers[x as usize] /= 2;
+                        self.registers[0xF] = vx >> 7;
+                        self.registers[x as usize] <<= 1;
                     }
                     _ => {}
                 }
@@ -261,7 +257,6 @@ impl Processor {
                     0x0A => {
                         self.pc -= 2;
                         for (i, pressed) in self.key.iter().enumerate() {
-                            // println!("{pressed}");
                             if *pressed {
                                 self.registers[x as usize] = i as u8;
                                 self.pc += 4;
@@ -270,7 +265,7 @@ impl Processor {
                         }
                     }
                     0x15 => {
-                        self.delay_timer = vx;
+                        self.delay_timer = vx
                     }
                     0x18 => {
                         self.sound_timer = vx;
@@ -283,10 +278,8 @@ impl Processor {
                     }
                     0x33 => {
                         self.ram[self.i] = vx / 100;
-                        let vx = vx - vx / 100;
-                        self.ram[self.i + 1] = vx / 10;
-                        let vx = vx - vx / 10;
-                        self.ram[self.i + 2] = vx;
+                        self.ram[self.i + 1] = (vx % 100) / 10;
+                        self.ram[self.i + 2] = vx % 10;
                     }
                     0x55 => {
                         //todo
@@ -432,6 +425,6 @@ fn main() {
 
         processor.set_timers();
 
-        thread::sleep(Duration::from_nanos(500));
+        thread::sleep(Duration::from_nanos(250));
     }
 }
